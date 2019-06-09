@@ -4,7 +4,6 @@ from os.path import relpath, join
 from pyprint.ConsolePrinter import ConsolePrinter
 
 from coalib.results.Diff import ConflictError
-from coalib.results.Result import Result
 from coalib.results.result_actions.ResultAction import ResultAction
 
 from coala_utils.decorators import enforce_signature
@@ -56,20 +55,22 @@ class ShowPatchAction(ResultAction):
 
     SUCCESS_MESSAGE = 'Displayed patch successfully.'
 
-    @staticmethod
+    def __init__(self, diffs):
+        self.diffs = diffs
+
     @enforce_signature
-    def is_applicable(result: Result,
+    def is_applicable(self,
                       original_file_dict,
                       file_diff_dict,
                       applied_actions=()):
 
-        if not result.diffs:
+        if not self.diffs:
             return 'This result has no patch attached.'
 
         try:
             # Needed so the addition is run for all patches -> ConflictError
             nonempty_patches = False
-            for filename, diff in result.diffs.items():
+            for filename, diff in self.diffs.items():
                 if diff and (filename not in file_diff_dict or
                              diff + file_diff_dict[filename] !=
                              file_diff_dict[filename]):
@@ -84,7 +85,6 @@ class ShowPatchAction(ResultAction):
                     'each other: {}'.format(str(ce)))
 
     def apply(self,
-              result,
               original_file_dict,
               file_diff_dict,
               no_color: bool = False,
@@ -104,9 +104,10 @@ class ShowPatchAction(ResultAction):
             from coalib.output.ConsoleInteraction import print_result
             # Most of the params are empty because they're unneeded in
             # noninteractive mode. Yes, this cries for a refactoring...
-            print_result(printer, None, {}, result, {}, interactive=False)
+            # FIX ME
+            # print_result(printer, None, {}, result, {}, interactive=False)
 
-        for filename, this_diff in sorted(result.diffs.items()):
+        for filename, this_diff in sorted(self.diffs.items()):
             to_filename = this_diff.rename if this_diff.rename else filename
             to_filename = '/dev/null' if this_diff.delete else to_filename
             original_file = original_file_dict[filename]

@@ -5,7 +5,6 @@ from os.path import exists
 from os import environ
 
 from coalib.results.Diff import Diff
-from coalib.results.Result import Result
 from coalib.results.result_actions.ResultAction import ResultAction
 from coala_utils.decorators import enforce_signature
 from coala_utils.FileUtils import detect_encoding
@@ -108,9 +107,11 @@ class OpenEditorAction(ResultAction):
 
     SUCCESS_MESSAGE = 'Changes saved successfully.'
 
-    @staticmethod
+    def __init__(self, affected_code):
+        self.affected_code = affected_code
+
     @enforce_signature
-    def is_applicable(result: Result,
+    def is_applicable(self,
                       original_file_dict,
                       file_diff_dict,
                       applied_actions=()):
@@ -119,11 +120,11 @@ class OpenEditorAction(ResultAction):
         that have to exist i.e. have not been previously deleted.
         """
 
-        if not len(result.affected_code) > 0:
+        if not len(self.affected_code) > 0:
             return 'The result is not associated with any source code.'
 
         filenames = set(src.renamed_file(file_diff_dict)
-                        for src in result.affected_code)
+                        for src in self.affected_code)
         if not all(exists(filename) for filename in filenames):
             return ("The result is associated with source code that doesn't "
                     'seem to exist.')
@@ -160,7 +161,7 @@ class OpenEditorAction(ResultAction):
 
         return call_args
 
-    def apply(self, result, original_file_dict, file_diff_dict, editor: str):
+    def apply(self, original_file_dict, file_diff_dict, editor: str):
         """
         (O)pen file
 
@@ -195,7 +196,7 @@ class OpenEditorAction(ResultAction):
                 'line': src.start.line or 1,
                 'column': src.start.column or 1
             }
-            for src in result.affected_code
+            for src in self.affected_code
         }
 
         call_args = self.build_editor_call_args(editor, editor_info, filenames)

@@ -12,8 +12,7 @@ class ResultAction:
 
     SUCCESS_MESSAGE = 'The action was executed successfully.'
 
-    @staticmethod
-    def is_applicable(result,
+    def is_applicable(self,
                       original_file_dict,
                       file_diff_dict,
                       applied_actions=()):
@@ -37,7 +36,7 @@ class ResultAction:
         """
         return True
 
-    def apply(self, result, original_file_dict, file_diff_dict, **kwargs):
+    def apply(self, original_file_dict, file_diff_dict, **kwargs):
         """
         No description. Something went wrong.
         """
@@ -45,7 +44,6 @@ class ResultAction:
 
     @enforce_signature
     def apply_from_section(self,
-                           result,
                            original_file_dict: dict,
                            file_diff_dict: dict,
                            section: Section):
@@ -67,7 +65,7 @@ class ResultAction:
         :return:                   The modified file_diff_dict.
         """
         params = self.get_metadata().create_params_from_section(section)
-        return self.apply(result, original_file_dict, file_diff_dict, **params)
+        return self.apply(original_file_dict, file_diff_dict, **params)
 
     @classmethod
     def get_metadata(cls):

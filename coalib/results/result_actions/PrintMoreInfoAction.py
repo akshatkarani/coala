@@ -1,4 +1,3 @@
-from coalib.results.Result import Result
 from coalib.results.result_actions.ResultAction import ResultAction
 
 from coala_utils.decorators import enforce_signature
@@ -6,20 +5,22 @@ from coala_utils.decorators import enforce_signature
 
 class PrintMoreInfoAction(ResultAction):
 
-    @staticmethod
+    def __init__(self, additional_info):
+        self.additional_info = additional_info
+
     @enforce_signature
-    def is_applicable(result: Result,
+    def is_applicable(self,
                       original_file_dict,
                       file_diff_dict,
                       applied_actions=()):
-        if result.additional_info != '':
+        if self.additional_info != '':
             return True
         return 'There is no additional info.'
 
-    def apply(self, result, original_file_dict, file_diff_dict):
+    def apply(self, original_file_dict, file_diff_dict):
         """
         Print (M)ore info
         """
-        print(result.additional_info)
+        print(self.additional_info)
 
         return file_diff_dict

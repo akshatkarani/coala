@@ -64,10 +64,12 @@ class DefaultBear():
 class GeneratePatchesAction(ResultAction):
     SUCCESS_MESSAGE = 'Patch generated successfully.'
 
-    is_applicable = staticmethod(ShowPatchAction.is_applicable)
+    is_applicable = ShowPatchAction.is_applicable
+
+    def __init__(self, diffs):
+        self.diffs = diffs
 
     def apply(self,
-              result,
               original_file_dict,
               file_diff_dict):
         """
@@ -76,7 +78,7 @@ class GeneratePatchesAction(ResultAction):
 
         console_printer = ConsolePrinter()
         log_printer = LogPrinter()
-        to_filename = sorted(result.diffs.items())[OBJECT_INDEX][FILENAME_INDEX]
+        to_filename = sorted(self.diffs.items())[OBJECT_INDEX][FILENAME_INDEX]
 
         filtered_bears = filter_bears(find_language(to_filename))
         filtered_bears.insert(0, DefaultBear())

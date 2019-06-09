@@ -1,7 +1,6 @@
 from coalib.bearlib.languages import Language
 from coalib.bearlib.languages.Language import UnknownLanguageError
 from coalib.results.result_actions.ResultAction import ResultAction
-from coalib.results.Result import Result
 from coalib.results.Diff import Diff
 from coala_utils.FileUtils import detect_encoding
 from os.path import exists
@@ -16,9 +15,12 @@ class IgnoreResultAction(ResultAction):
 
     SUCCESS_MESSAGE = 'An ignore comment was added to your source code.'
 
-    @staticmethod
+    def __init__(self, origin, affected_code):
+        self.origin = origin
+        self.affected_code = affected_code
+
     @enforce_signature
-    def is_applicable(result: Result,
+    def is_applicable(self,
                       original_file_dict,
                       file_diff_dict,
                       applied_actions=()):
@@ -31,29 +33,29 @@ class IgnoreResultAction(ResultAction):
         if IgnoreResultAction.__name__ in applied_actions:
             return 'An ignore comment was already added for this result.'
 
-        if len(result.affected_code) == 0:
+        if len(self.affected_code) == 0:
             return 'The result is not associated with any source code.'
 
         filenames = set(src.renamed_file(file_diff_dict)
-                        for src in result.affected_code)
+                        for src in self.affected_code)
         if any(exists(filename) for filename in filenames):
             return True
         return ("The result is associated with source code that doesn't "
                 'seem to exist.')
 
-    def apply(self, result, original_file_dict, file_diff_dict, language: str,
+    def apply(self, original_file_dict, file_diff_dict, language: str,
               no_orig: bool = False):
         """
         Add (I)gnore comment
         """
 
-        ignore_comment = self.get_ignore_comment(result.origin, language)
+        ignore_comment = self.get_ignore_comment(self.origin, language)
 
         if not ignore_comment:
             return file_diff_dict
 
         source_range = next(filter(lambda sr: exists(sr.file),
-                                   result.affected_code))
+                                   self.affected_code))
         filename = source_range.file
 
         ignore_diff = Diff(original_file_dict[filename])

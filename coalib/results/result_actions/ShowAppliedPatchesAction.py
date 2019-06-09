@@ -15,24 +15,24 @@ class ShowAppliedPatchesAction(ResultAction):
 
     SUCCESS_MESSAGE = 'Applied patches shown'
 
-    is_applicable = staticmethod(ShowPatchAction.is_applicable)
+    def __init__(self, applied_actions, diffs):
+        self.applied_actions = applied_actions
+        self.diffs = diffs
 
     def apply(self,
-              result,
               original_file_dict,
               file_diff_dict):
         """
         Show Applied (P)atches
         """
         console_printer = ConsolePrinter()
-        applied_actions = result.get_applied_actions()
-        show_patch_action = ShowPatchAction()
+        show_patch_action = ShowPatchAction(self.diffs)
         RESULT_INDEX = 0
         FILE_DICT_INDEX = 1
         FILE_DIFF_DICT_INDEX = 2
         SECTION_INDEX = 3
 
-        for key, val in applied_actions.items():
+        for key, val in self.applied_actions.items():
             this_result = val[RESULT_INDEX]
             this_section = val[SECTION_INDEX]
             color_res = RESULT_SEVERITY_COLORS[this_result.severity]

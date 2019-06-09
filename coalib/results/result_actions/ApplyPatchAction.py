@@ -12,10 +12,12 @@ class ApplyPatchAction(ResultAction):
 
     SUCCESS_MESSAGE = 'Patch applied successfully.'
 
-    is_applicable = staticmethod(ShowPatchAction.is_applicable)
+    is_applicable = ShowPatchAction.is_applicable
+
+    def __init__(self, diffs):
+        self.diffs = diffs
 
     def apply(self,
-              result,
               original_file_dict,
               file_diff_dict,
               no_orig: bool = False):
@@ -24,16 +26,16 @@ class ApplyPatchAction(ResultAction):
 
         :param no_orig: Whether or not to create .orig backup files
         """
-        for filename in result.diffs:
+        for filename in self.diffs:
             pre_patch_filename = filename
             if filename in file_diff_dict:
                 diff = file_diff_dict[filename]
                 pre_patch_filename = (diff.rename
                                       if diff.rename is not False
                                       else filename)
-                file_diff_dict[filename] += result.diffs[filename]
+                file_diff_dict[filename] += self.diffs[filename]
             else:
-                file_diff_dict[filename] = result.diffs[filename]
+                file_diff_dict[filename] = self.diffs[filename]
 
                 # Backup original file, only if there was no previous patch
                 # from this run though!
