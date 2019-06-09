@@ -17,18 +17,7 @@ from coalib.misc.Exceptions import log_exception
 from coalib.misc.DeprecationUtilities import check_deprecation
 from coalib.bearlib.spacing.SpacingHelper import SpacingHelper
 from coalib.results.Result import Result
-from coalib.results.result_actions.ApplyPatchAction import ApplyPatchAction
-from coalib.results.result_actions.OpenEditorAction import OpenEditorAction
-from coalib.results.result_actions.IgnoreResultAction import IgnoreResultAction
 from coalib.results.result_actions.DoNothingAction import DoNothingAction
-from coalib.results.result_actions.GeneratePatchesAction import (
-    GeneratePatchesAction)
-from coalib.results.result_actions.ShowAppliedPatchesAction import (
-    ShowAppliedPatchesAction)
-from coalib.results.result_actions.PrintDebugMessageAction import (
-    PrintDebugMessageAction)
-from coalib.results.result_actions.PrintMoreInfoAction import (
-    PrintMoreInfoAction)
 from coalib.results.result_actions.ShowPatchAction import ShowPatchAction
 from coalib.results.RESULT_SEVERITY import (
     RESULT_SEVERITY, RESULT_SEVERITY_COLORS)
@@ -85,14 +74,6 @@ CAPABILITY_COLOR = 'green'
 HIGHLIGHTED_CODE_COLOR = 'red'
 SUCCESS_COLOR = 'green'
 REQUIRED_SETTINGS_COLOR = 'green'
-CLI_ACTIONS = (OpenEditorAction(),
-               ApplyPatchAction(),
-               PrintDebugMessageAction(),
-               PrintMoreInfoAction(),
-               ShowPatchAction(),
-               IgnoreResultAction(),
-               ShowAppliedPatchesAction(),
-               GeneratePatchesAction())
 DIFF_EXCERPT_MAX_SIZE = 4
 
 
@@ -149,7 +130,6 @@ def acquire_actions_and_apply(console_printer,
                               file_diff_dict,
                               result,
                               file_dict,
-                              cli_actions=None,
                               apply_single=False):
     """
     Acquires applicable actions and applies them.
@@ -165,7 +145,6 @@ def acquire_actions_and_apply(console_printer,
                             If it's not selected, has a value of False.
     :param cli_actions:     The list of cli actions available.
     """
-    cli_actions = CLI_ACTIONS if cli_actions is None else cli_actions
     failed_actions = set()
     applied_actions = {}
 
@@ -173,9 +152,8 @@ def acquire_actions_and_apply(console_printer,
         action_dict = {}
         metadata_list = []
 
-        for action in cli_actions:
-            if action.is_applicable(result,
-                                    file_dict,
+        for action in result.actions:
+            if action.is_applicable(file_dict,
                                     file_diff_dict,
                                     tuple(applied_actions.keys())) is True:
                 metadata = action.get_metadata()
@@ -306,18 +284,16 @@ def print_result(console_printer,
     console_printer.print(format_lines(result.message, symbol='!'))
 
     if interactive:
-        cli_actions = CLI_ACTIONS
-        show_patch_action = ShowPatchAction()
-        if show_patch_action.is_applicable(
-                result, file_dict, file_diff_dict) is True:
+        show_patch_action = ShowPatchAction(result.diffs)
+        if show_patch_action.is_applicable(file_dict, file_diff_dict) is True:
             diff_size = sum(len(diff) for diff in result.diffs.values())
             if diff_size <= DIFF_EXCERPT_MAX_SIZE:
-                show_patch_action.apply_from_section(result,
-                                                     file_dict,
+                show_patch_action.apply_from_section(file_dict,
                                                      file_diff_dict,
                                                      section)
-                cli_actions = tuple(action for action in cli_actions
-                                    if not isinstance(action, ShowPatchAction))
+                actions = [action for action in result.actions
+                           if not isinstance(action, ShowPatchAction)]
+                result.actions = actions
             else:
                 print_diffs_info(result.diffs, console_printer)
         acquire_actions_and_apply(console_printer,
@@ -325,7 +301,6 @@ def print_result(console_printer,
                                   file_diff_dict,
                                   result,
                                   file_dict,
-                                  cli_actions,
                                   apply_single=apply_single)
 
 
@@ -721,18 +696,17 @@ def try_to_apply_action(action_name,
                             as values.
     """
     try:
-        chosen_action.apply_from_section(result,
-                                         file_dict,
+        chosen_action.apply_from_section(file_dict,
                                          file_diff_dict,
                                          section)
         if not isinstance(chosen_action, DoNothingAction):
             console_printer.print(
                 format_lines(chosen_action.SUCCESS_MESSAGE, symbol='['),
                 color=SUCCESS_COLOR)
-        applied_actions[action_name] = [copy.copy(result), copy.copy(
-            file_dict),
-                                    copy.copy(file_diff_dict),
-                                    copy.copy(section)]
+        applied_actions[action_name] = [copy.copy(result),
+                                        copy.copy(file_dict),
+                                        copy.copy(file_diff_dict),
+                                        copy.copy(section)]
         result.set_applied_actions(applied_actions)
         failed_actions.discard(action_name)
     except Exception as exception:  # pylint: disable=broad-except
