@@ -17,6 +17,7 @@ from coalib.results.Result import Result
 from coalib.results.result_actions.DoNothingAction import DoNothingAction
 from coalib.results.result_actions.ApplyPatchAction import ApplyPatchAction
 from coalib.results.result_actions.IgnoreResultAction import IgnoreResultAction
+from coalib.results.result_actions.AddNewLineAction import AddNewLineAction
 from coalib.results.result_actions.ShowAppliedPatchesAction import (
     ShowAppliedPatchesAction)
 from coalib.results.result_actions.GeneratePatchesAction import (
@@ -38,7 +39,8 @@ ACTIONS = [DoNothingAction,
            ShowPatchAction,
            IgnoreResultAction,
            ShowAppliedPatchesAction,
-           GeneratePatchesAction]
+           GeneratePatchesAction,
+           AddNewLineAction]
 
 
 def get_cpu_count():
@@ -136,17 +138,19 @@ def autoapply_actions(results,
     for result in results:
         try:
             # Match full bear names deterministically, prioritized!
-            action = default_actions[result.origin]
+            action_type = default_actions[result.origin]
         except KeyError:
             for bear_glob in default_actions:
                 if fnmatch(result.origin, bear_glob):
-                    action = default_actions[bear_glob]
+                    action_type = default_actions[bear_glob]
                     break
             else:
                 not_processed_results.append(result)
                 continue
 
-        applicable = action.is_applicable(result, file_dict, file_diff_dict)
+        action = next(action for action in result.actions
+                      if isinstance(action, action_type))
+        applicable = action.is_applicable(file_dict, file_diff_dict)
         if applicable is not True:
             if not no_autoapply_warn:
                 logging.warning('{}: {}'.format(result.origin, applicable))
@@ -154,10 +158,9 @@ def autoapply_actions(results,
             continue
 
         try:
-            action().apply_from_section(result,
-                                        file_dict,
-                                        file_diff_dict,
-                                        section)
+            action.apply_from_section(file_dict,
+                                      file_diff_dict,
+                                      section)
             logging.info('Applied {!r} on {} from {!r}.'.format(
                 action.get_metadata().name,
                 result.location_repr(),
