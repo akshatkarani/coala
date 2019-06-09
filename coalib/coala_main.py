@@ -35,14 +35,14 @@ STR_ENTER_LETTER = 'Enter letter (Ctrl-{} to exit): '.format(
 
 
 def provide_all_actions():
-    return [DoNothingAction().get_metadata().desc,
-            ShowPatchAction().get_metadata().desc,
-            ApplyPatchAction().get_metadata().desc,
-            IgnoreResultAction().get_metadata().desc,
-            OpenEditorAction().get_metadata().desc,
-            PrintAspectAction().get_metadata().desc,
-            PrintDebugMessageAction().get_metadata().desc,
-            PrintMoreInfoAction().get_metadata().desc]
+    return [DoNothingAction.get_metadata().desc,
+            ShowPatchAction.get_metadata().desc,
+            ApplyPatchAction.get_metadata().desc,
+            IgnoreResultAction.get_metadata().desc,
+            OpenEditorAction.get_metadata().desc,
+            PrintAspectAction.get_metadata().desc,
+            PrintDebugMessageAction.get_metadata().desc,
+            PrintMoreInfoAction.get_metadata().desc]
 
 
 def format_lines(lines, symbol='', line_nr=''):
