@@ -6,6 +6,18 @@ from coala_utils.decorators import (
 from coalib.bearlib.aspects import aspectbase
 from coalib.results.RESULT_SEVERITY import RESULT_SEVERITY
 from coalib.results.SourceRange import SourceRange
+from coalib.results.result_actions.ApplyPatchAction import ApplyPatchAction
+from coalib.results.result_actions.OpenEditorAction import OpenEditorAction
+from coalib.results.result_actions.IgnoreResultAction import IgnoreResultAction
+from coalib.results.result_actions.GeneratePatchesAction import (
+    GeneratePatchesAction)
+from coalib.results.result_actions.ShowAppliedPatchesAction import (
+    ShowAppliedPatchesAction)
+from coalib.results.result_actions.PrintDebugMessageAction import (
+    PrintDebugMessageAction)
+from coalib.results.result_actions.PrintMoreInfoAction import (
+    PrintMoreInfoAction)
+from coalib.results.result_actions.ShowPatchAction import ShowPatchAction
 
 
 # Omit additional info, debug message and diffs for brevity
@@ -65,7 +77,8 @@ class Result:
                  confidence: int = 100,
                  aspect: (aspectbase, None) = None,
                  message_arguments: dict = {},
-                 applied_actions: dict = {}):
+                 applied_actions: dict = {},
+                 actions: list = []):
         """
         :param origin:
             Class name or creator object of this object.
@@ -132,6 +145,16 @@ class Result:
             self.additional_info = '{} {}'.format(
                 aspect.Docs.importance_reason, aspect.Docs.fix_suggestions)
 
+        self.actions = actions
+        self.actions.append(ShowPatchAction(diffs))
+        self.actions.append(OpenEditorAction(affected_code))
+        self.actions.append(ApplyPatchAction(diffs))
+        self.actions.append(IgnoreResultAction(origin, affected_code))
+        self.actions.append(ShowAppliedPatchesAction(applied_actions, diffs))
+        self.actions.append(GeneratePatchesAction(diffs))
+        self.actions.append(PrintMoreInfoAction(additional_info))
+        self.actions.append(PrintDebugMessageAction(debug_msg))
+
     @property
     def message(self):
         if not self.message_arguments:
@@ -164,7 +187,8 @@ class Result:
                     diffs: (dict, None) = None,
                     confidence: int = 100,
                     aspect: (aspectbase, None) = None,
-                    message_arguments: dict = {}):
+                    message_arguments: dict = {},
+                    actions: list = []):
         """
         Creates a result with only one SourceRange with the given start and end
         locations.
@@ -225,7 +249,8 @@ class Result:
                    diffs=diffs,
                    confidence=confidence,
                    aspect=aspect,
-                   message_arguments=message_arguments)
+                   message_arguments=message_arguments,
+                   actions=actions)
 
     def to_string_dict(self):
         """
